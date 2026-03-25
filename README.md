@@ -45,7 +45,9 @@ Minimum values you must replace:
 - `do_token`
 - `kong_postgres_password`
 - `rancher_bootstrap_password`
-- `kong_admin_gui_session_conf` secret
+- `kong_admin_gui_session_conf` secret 
+      create a token using the below command 
+        [guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N")
 
 Example for dev:
 
