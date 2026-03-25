@@ -1,0 +1,32 @@
+cert_manager_chart_version  = "v1.17.1"
+ingress_nginx_chart_version = "4.12.1"
+kong_chart_version          = "2.42.0"
+rancher_chart_version       = "2.13.3"
+kong_admin_enabled          = true
+kong_db_less                = false
+kong_timeout_seconds        = 1200
+kong_admin_gui_session_conf = "{\"secret\":\"replace-me-dev-secret\",\"storage\":\"kong\",\"cookie_secure\":false}"
+kong_resources = {
+  requests_cpu    = "100m"
+  requests_memory = "256Mi"
+  limits_cpu      = "500m"
+  limits_memory   = "512Mi"
+}
+kong_postgres_image              = "postgres:15-alpine"
+kong_postgres_database_name      = "kong"
+kong_postgres_username           = "kong"
+kong_postgres_password           = "ChangeMeImmediately!"
+kong_postgres_storage_size       = "8Gi"
+kong_postgres_storage_class_name = null
+kong_node_selector = {
+  workload = "kong"
+}
+kong_postgres_node_selector = {
+  workload = "kong"
+}
+rancher_hostname                 = "rancher.<load-balancer-ip>.sslip.io"
+rancher_bootstrap_password       = "ChangeMeImmediately!"
+rancher_ingress_class_name       = "nginx"
+rancher_node_selector = {
+  workload = "rancher"
+}
