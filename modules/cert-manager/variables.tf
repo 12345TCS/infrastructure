@@ -11,3 +11,8 @@ variable "create_namespace" {
   type    = bool
   default = true
 }
+
+variable "node_selector" {
+  type    = map(string)
+  default = { workload = "monitoring" }
+}

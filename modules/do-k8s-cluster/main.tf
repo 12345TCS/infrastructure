@@ -14,7 +14,7 @@ locals {
     data.digitalocean_kubernetes_versions.this.latest_version
   )
 
-  primary_node_pool    = var.node_pools[0]
+  primary_node_pool     = var.node_pools[0]
   additional_node_pools = slice(var.node_pools, 1, length(var.node_pools))
 }
 

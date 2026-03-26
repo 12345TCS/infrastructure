@@ -14,6 +14,7 @@ module "cert_manager" {
   source = "../../../modules/cert-manager"
 
   chart_version = var.cert_manager_chart_version
+  node_selector = var.cert_manager_node_selector
 }
 
 module "ingress_nginx" {
@@ -73,5 +74,24 @@ module "rancher" {
   tls_source         = var.rancher_tls_source
   node_selector      = var.rancher_node_selector
 
-  depends_on = [module.ingress_nginx]
+  depends_on = [module.ingress_nginx, module.cert_manager]
 }
+
+module "monitoring" {
+  source = "../../../modules/monitoring"
+
+  chart_version                 = var.monitoring_chart_version
+  grafana_admin_password        = var.grafana_admin_password
+  grafana_service_type          = var.grafana_service_type
+  grafana_persistence_size      = var.grafana_persistence_size
+  grafana_storage_class_name    = var.grafana_storage_class_name
+  prometheus_persistence_size   = var.prometheus_persistence_size
+  prometheus_storage_class_name = var.prometheus_storage_class_name
+  prometheus_retention          = var.prometheus_retention
+  node_selector                 = var.monitoring_node_selector
+
+  depends_on = [module.cert_manager]
+}
+
+
+

@@ -22,11 +22,11 @@ node_pools = [
     }
   },
   {
-    name       = "apps"
+    name       = "monitoring"
     size       = "s-2vcpu-2gb"
     node_count = 1
     labels = {
-      workload = "apps"
+      workload = "monitoring"
     }
   }
 ]
