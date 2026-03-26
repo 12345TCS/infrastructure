@@ -4,7 +4,9 @@ variable "namespace" {
 }
 
 variable "chart_version" {
-  type = string
+  type     = string
+  default  = null
+  nullable = true
 }
 
 variable "create_namespace" {

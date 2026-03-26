@@ -3,7 +3,7 @@
 This repository uses a two-layer Terraform layout:
 
 - `envs/<env>/infra`: DigitalOcean VPC and DOKS cluster
-- `envs/<env>/platform`: cert-manager, ingress-nginx for infra/admin services, Kong for application traffic, Rancher, and an in-cluster PostgreSQL StatefulSet for Kong
+- `envs/<env>/platform`: cert-manager, ingress-nginx for infra/admin services, Kong for application traffic, Rancher, Prometheus/Grafana monitoring, and an in-cluster PostgreSQL StatefulSet for Kong
 
 ## Canonical Layout
 
@@ -14,6 +14,7 @@ modules/
   ingress-nginx/
   kong/
   kong-postgres/
+  monitoring/
   rancher/
 envs/
   dev/
@@ -46,6 +47,7 @@ Minimum values you must replace:
 - `kong_postgres_password`
 - `rancher_bootstrap_password`
 - `kong_admin_gui_session_conf` secret
+- `grafana_admin_password`
 
 Example for dev:
 
@@ -96,12 +98,14 @@ After a successful dev deployment:
 - Rancher is exposed through `ingress-nginx`, not Kong
 - Kong Admin API can be accessed by port-forwarding the admin service
 - Kong Manager, if available in the deployed Kong build, can be accessed by port-forwarding the manager service
+- Grafana can be accessed by port-forwarding the Grafana service in the `monitoring` namespace
 - Kong uses an in-cluster PostgreSQL StatefulSet, not DigitalOcean Managed Databases
 
 ## Access Pattern
 
 - Rancher is an infra/admin service and is exposed through `ingress-nginx`.
 - Kong is reserved for application-related services.
+- Prometheus and Grafana run in the `monitoring` namespace and are scheduled onto the `monitoring` node pool.
 - For dev without a real domain, use `sslip.io`, for example:
   - `rancher.<load-balancer-ip>.sslip.io`
 - For prod, use a real domain and set Rancher TLS source appropriately.
@@ -113,13 +117,14 @@ This repository uses three single-node pools by default:
 
 - `rancher` with label `workload=rancher`
 - `kong` with label `workload=kong`
-- `apps` with label `workload=apps`
+- `monitoring` with label `workload=monitoring`
 
 Scheduling behavior:
 
 - Rancher is pinned to the `rancher` pool
 - Kong and Kong PostgreSQL are pinned to the `kong` pool
-- application workloads can target the `apps` pool
+- Prometheus, Grafana, and related monitoring components are pinned to the `monitoring` pool
+- application workloads can target the `monitoring` pool, or you can add a separate application pool later if needed
 
 This gives you stable pool names for scaling and clearer workload isolation, even though the underlying DOKS node names are still auto-generated.
 

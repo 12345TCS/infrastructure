@@ -11,6 +11,12 @@ variable "kong_chart_version" {
 }
 
 variable "rancher_chart_version" {
+  type     = string
+  default  = null
+  nullable = true
+}
+
+variable "monitoring_chart_version" {
   type = string
 }
 
@@ -162,3 +168,53 @@ variable "kong_admin_gui_session_conf" {
   type    = string
   default = "{\"secret\":\"replace-me-dev-secret\",\"storage\":\"kong\",\"cookie_secure\":false}"
 }
+
+variable "grafana_admin_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "grafana_service_type" {
+  type    = string
+  default = "ClusterIP"
+}
+
+variable "grafana_persistence_size" {
+  type    = string
+  default = "20Gi"
+}
+
+variable "grafana_storage_class_name" {
+  type     = string
+  default  = null
+  nullable = true
+}
+
+variable "prometheus_persistence_size" {
+  type    = string
+  default = "50Gi"
+}
+
+variable "prometheus_storage_class_name" {
+  type     = string
+  default  = null
+  nullable = true
+}
+
+variable "prometheus_retention" {
+  type    = string
+  default = "15d"
+}
+
+variable "monitoring_node_selector" {
+  type    = map(string)
+  default = { workload = "monitoring" }
+}
+
+
+
+variable "cert_manager_node_selector" {
+  type    = map(string)
+  default = { workload = "rancher" }
+}
+
