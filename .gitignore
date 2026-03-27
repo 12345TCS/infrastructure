@@ -16,3 +16,4 @@ terraform.tfvars
 
 kubeconfig.yaml
 .helm/
+agekey.txt
