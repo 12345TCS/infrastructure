@@ -10,6 +10,7 @@ locals {
   kong_env = merge(
     {
       database = var.db_less ? "off" : "postgres"
+      plugins  = "bundled,prometheus"
     },
     var.manager_enabled && var.admin_gui_url != null ? {
       admin_gui_url = var.admin_gui_url
@@ -80,6 +81,12 @@ resource "helm_release" "this" {
         }
         tls = {
           enabled = var.manager_tls_enabled
+        }
+      }
+      serviceMonitor = {
+        enabled = true
+        labels = {
+          release = "kube-prometheus-stack"
         }
       }
       resources = {
