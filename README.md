@@ -105,6 +105,104 @@ After a successful dev deployment:
 - Grafana can be accessed by port-forwarding the Grafana service in the `monitoring` namespace
 - Kong uses an in-cluster PostgreSQL StatefulSet, not DigitalOcean Managed Databases
 
+## Access After Apply
+
+From `envs/dev/platform`, set kubeconfig for local access:
+
+```powershell
+$env:KUBECONFIG = (Resolve-Path .\kubeconfig.yaml)
+```
+
+### Rancher
+
+Open in the browser:
+
+```text
+https://rancher.<external-ip>.sslip.io
+```
+
+For the current dev flow, this is the `rancher_hostname` value from `envs/dev/platform/terraform.tfvars`.
+
+Login:
+
+- username: `admin`
+- password: `rancher_bootstrap_password` from `envs/dev/platform/terraform.tfvars`
+
+### Kong Admin API
+
+```powershell
+kubectl -n kong port-forward svc/kong-kong-admin 8001:8001
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8001
+```
+
+### Kong Manager
+
+If exposed by the deployed Kong build:
+
+```powershell
+kubectl -n kong port-forward svc/kong-kong-manager 8002:8002
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8002
+```
+
+### Grafana
+
+```powershell
+kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
+```
+
+Then open:
+
+```text
+http://127.0.0.1:3000
+```
+
+Login:
+
+- username: `admin`
+- password: `grafana_admin_password` from `envs/dev/platform/terraform.tfvars`
+
+### Prometheus
+
+```powershell
+kubectl -n monitoring port-forward svc/kube-prometheus-stack-prometheus 9090:9090
+```
+
+Then open:
+
+```text
+http://127.0.0.1:9090
+```
+
+### Alertmanager
+
+```powershell
+kubectl -n monitoring port-forward svc/kube-prometheus-stack-alertmanager 9093:9093
+```
+
+Then open:
+
+```text
+http://127.0.0.1:9093
+```
+
+### Useful Service Discovery Commands
+
+```powershell
+kubectl get svc -n kong
+kubectl get svc -n monitoring
+kubectl get ingress -n cattle-system
+```
+
 ## Access Pattern
 
 - Rancher is an infra/admin service and is exposed through `ingress-nginx`.
