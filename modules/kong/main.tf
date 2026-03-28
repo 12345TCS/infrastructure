@@ -3,6 +3,9 @@ terraform {
     helm = {
       source = "hashicorp/helm"
     }
+    kubernetes = {
+      source = "hashicorp/kubernetes"
+    }
   }
 }
 
@@ -10,6 +13,7 @@ locals {
   kong_env = merge(
     {
       database = var.db_less ? "off" : "postgres"
+      plugins  = var.metrics_enabled ? "bundled,prometheus" : "bundled"
     },
     var.manager_enabled && var.admin_gui_url != null ? {
       admin_gui_url = var.admin_gui_url
@@ -82,6 +86,10 @@ resource "helm_release" "this" {
           enabled = var.manager_tls_enabled
         }
       }
+      serviceMonitor = {
+        enabled = var.metrics_enabled
+        labels  = var.metrics_service_monitor_labels
+      }
       resources = {
         requests = {
           cpu    = var.resources.requests_cpu
@@ -94,4 +102,22 @@ resource "helm_release" "this" {
       }
     })
   ]
+}
+
+resource "kubernetes_manifest" "prometheus_plugin" {
+  count = var.metrics_enabled ? 1 : 0
+
+  manifest = {
+    apiVersion = "configuration.konghq.com/v1"
+    kind       = "KongClusterPlugin"
+    metadata = {
+      name = "prometheus"
+      labels = {
+        global = "true"
+      }
+    }
+    plugin = "prometheus"
+  }
+
+  depends_on = [helm_release.this]
 }
