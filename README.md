@@ -203,6 +203,86 @@ kubectl get svc -n monitoring
 kubectl get ingress -n cattle-system
 ```
 
+
+## Kong Metrics
+
+Kong base metrics are enabled by Terraform through the Kong Helm chart:
+
+- Kong runtime loads the `prometheus` plugin
+- Prometheus Operator discovers Kong through the chart-created `ServiceMonitor`
+
+The richer global Prometheus plugin configuration is applied from a checked-in manifest instead of Terraform because the Terraform Kubernetes provider timed out on the `KongClusterPlugin` CRD OpenAPI lookup in this environment.
+
+Apply the richer Kong metrics plugin from `envs/dev/platform`:
+
+```powershell
+$env:KUBECONFIG = (Resolve-Path .\kubeconfig.yaml)
+kubectl apply -f .\kong-prometheus-plugin.yaml
+```
+
+Verify the plugin is active in Kong runtime:
+
+```powershell
+kubectl -n kong port-forward svc/kong-kong-admin 8001:8001
+curl -UseBasicParsing http://127.0.0.1:8001/plugins
+```
+
+Verify Prometheus is scraping Kong:
+
+```powershell
+kubectl get servicemonitor -A
+kubectl -n monitoring port-forward svc/kube-prometheus-stack-prometheus 9090:9090
+```
+
+Then check in Prometheus or Grafana Explore:
+
+```text
+{__name__=~"kong_.*"}
+```
+
+## Kong Test App
+
+Use the checked-in demo app manifest to validate Kong routing before your real application exists.
+
+From `envs/dev/platform`:
+
+```powershell
+$env:KUBECONFIG = (Resolve-Path .\kubeconfig.yaml)
+kubectl create namespace demo
+kubectl -n demo create deployment httpbin --image=kennethreitz/httpbin
+kubectl -n demo expose deployment httpbin --port=80 --target-port=80 --name=httpbin
+kubectl apply -f .\demo-httpbin.yaml
+```
+
+The demo ingress routes `/demo` through Kong and strips the prefix before sending traffic to `httpbin`.
+
+Test through the Kong proxy load balancer IP:
+
+```powershell
+curl -UseBasicParsing http://<kong-external-ip>/demo/get
+curl -UseBasicParsing http://<kong-external-ip>/demo/status/200
+curl -UseBasicParsing http://<kong-external-ip>/demo/status/500
+curl -UseBasicParsing http://<kong-external-ip>/demo/delay/2
+```
+
+These responses should include Kong headers such as:
+
+- `X-Kong-Upstream-Latency`
+- `X-Kong-Proxy-Latency`
+- `X-Kong-Request-Id`
+
+When testing is complete, remove the demo app cleanly:
+
+```powershell
+kubectl delete -f .\demo-httpbin.yaml
+kubectl delete namespace demo
+```
+
+If you also enabled the richer Kong Prometheus plugin for testing and do not want to keep it:
+
+```powershell
+kubectl delete -f .\kong-prometheus-plugin.yaml
+```
 ## Access Pattern
 
 - Rancher is an infra/admin service and is exposed through `ingress-nginx`.
@@ -241,3 +321,4 @@ This gives you stable pool names for scaling and clearer workload isolation, eve
 - If a pool has only one node, workloads pinned to that pool are not highly available.
 - The old single-layer layout has been removed.
 - `terraform.tfvars`, kubeconfig files, local state, plans, and Helm caches are ignored by git.
+
