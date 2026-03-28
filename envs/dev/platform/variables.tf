@@ -154,6 +154,17 @@ variable "rancher_node_selector" {
   default = { workload = "rancher" }
 }
 
+variable "kong_metrics_enabled" {
+  type    = bool
+  default = true
+}
+
+variable "kong_metrics_service_monitor_labels" {
+  type = map(string)
+  default = {
+    release = "kube-prometheus-stack"
+  }
+}
 variable "kong_admin_gui_url" {
   type    = string
   default = "http://127.0.0.1:8002"
@@ -217,4 +228,5 @@ variable "cert_manager_node_selector" {
   type    = map(string)
   default = { workload = "rancher" }
 }
+
 
