@@ -3,7 +3,7 @@
 This repository uses a two-layer Terraform layout:
 
 - `envs/<env>/infra`: DigitalOcean VPC and DOKS cluster
-- `envs/<env>/platform`: cert-manager, ingress-nginx for infra/admin services, Kong for application traffic, Rancher, Prometheus/Grafana monitoring, and an in-cluster PostgreSQL StatefulSet for Kong
+- `envs/<env>/platform`: cert-manager, ingress-nginx for infra/admin services, Kong for application traffic, Rancher, Prometheus/Grafana monitoring, Jenkins, and an in-cluster PostgreSQL StatefulSet for Kong
 
 ## Canonical Layout
 
@@ -12,6 +12,7 @@ modules/
   cert-manager/
   do-k8s-cluster/
   ingress-nginx/
+  jenkins/
   kong/
   kong-postgres/
   monitoring/
@@ -46,12 +47,15 @@ Minimum values you must replace:
 - `do_token`
 - `kong_postgres_password`
 - `rancher_bootstrap_password`
-
-- `kong_admin_gui_session_conf` secret
 - `grafana_admin_password`
-- `kong_admin_gui_session_conf` secret 
-      create a token using the below command 
-        [guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N")
+- `jenkins_admin_password`
+- `kong_admin_gui_session_conf` secret
+
+Create the `kong_admin_gui_session_conf` secret value with:
+
+```powershell
+[guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N")
+```
 
 Example for dev:
 
@@ -103,6 +107,7 @@ After a successful dev deployment:
 - Kong Admin API can be accessed by port-forwarding the admin service
 - Kong Manager, if available in the deployed Kong build, can be accessed by port-forwarding the manager service
 - Grafana can be accessed by port-forwarding the Grafana service in the `monitoring` namespace
+- Jenkins is exposed only through port-forwarding in dev
 - Kong uses an in-cluster PostgreSQL StatefulSet, not DigitalOcean Managed Databases
 
 ## Access After Apply
@@ -171,6 +176,25 @@ Login:
 - username: `admin`
 - password: `grafana_admin_password` from `envs/dev/platform/terraform.tfvars`
 
+### Jenkins
+
+Jenkins is deployed as an internal service and accessed through port-forwarding in dev:
+
+```powershell
+kubectl -n jenkins port-forward svc/jenkins 8080:8080
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8080
+```
+
+Login:
+
+- username: `jenkins_admin_username` from `envs/dev/platform/terraform.tfvars`
+- password: `jenkins_admin_password` from `envs/dev/platform/terraform.tfvars`
+
 ### Prometheus
 
 ```powershell
@@ -200,9 +224,9 @@ http://127.0.0.1:9093
 ```powershell
 kubectl get svc -n kong
 kubectl get svc -n monitoring
+kubectl get svc -n jenkins
 kubectl get ingress -n cattle-system
 ```
-
 
 ## Kong Metrics
 
@@ -283,11 +307,13 @@ If you also enabled the richer Kong Prometheus plugin for testing and do not wan
 ```powershell
 kubectl delete -f .\kong-prometheus-plugin.yaml
 ```
+
 ## Access Pattern
 
 - Rancher is an infra/admin service and is exposed through `ingress-nginx`.
 - Kong is reserved for application-related services.
 - Prometheus and Grafana run in the `monitoring` namespace and are scheduled onto the `monitoring` node pool.
+- Jenkins runs privately in the `jenkins` namespace and is accessed through port-forwarding in dev.
 - For dev without a real domain, use `sslip.io`, for example:
   - `rancher.<load-balancer-ip>.sslip.io`
 - For prod, use a real domain and set Rancher TLS source appropriately.
@@ -295,30 +321,53 @@ kubectl delete -f .\kong-prometheus-plugin.yaml
 ## Node Pools
 
 DOKS does not support exact custom per-node names, but it does support multiple named node pools with labels.
-This repository uses three single-node pools by default:
+This repository uses four single-node pools by default:
 
 - `rancher` with label `workload=rancher`
 - `kong` with label `workload=kong`
 - `monitoring` with label `workload=monitoring`
+- `jenkins` with label `workload=jenkins`
 
 Scheduling behavior:
 
 - Rancher is pinned to the `rancher` pool
 - Kong and Kong PostgreSQL are pinned to the `kong` pool
 - Prometheus, Grafana, and related monitoring components are pinned to the `monitoring` pool
+- Jenkins is pinned to the `jenkins` pool
 - application workloads can target the `monitoring` pool, or you can add a separate application pool later if needed
 
 This gives you stable pool names for scaling and clearer workload isolation, even though the underlying DOKS node names are still auto-generated.
 
 ## Recommended Defaults
 
-- `dev`: 3 pools with 1 `s-2vcpu-2gb` node each, Kong with a single-replica PostgreSQL StatefulSet
-- `stage`: 3 pools with 1 `s-2vcpu-4gb` node each
-- `prod`: 3 pools with 1 `s-4vcpu-8gb` node each, larger Kong/PostgreSQL resource allocations, real DNS
+- `dev`: rancher, kong, and monitoring on `s-2vcpu-2gb`; Jenkins on `s-2vcpu-4gb`; Kong with a single-replica PostgreSQL StatefulSet
+- `stage`: 4 pools with 1 `s-2vcpu-4gb` node each
+- `prod`: 4 pools with 1 `s-4vcpu-8gb` node each, larger Kong/PostgreSQL resource allocations, real DNS
+
+## Jenkins
+
+For dev, Jenkins is deployed on its own `jenkins` node pool and kept private behind a `ClusterIP` service.
+
+Required changes before apply:
+
+- add the `jenkins` node pool from `envs/dev/infra/terraform.tfvars.example` into your real `envs/dev/infra/terraform.tfvars`
+- copy the Jenkins values from `envs/dev/platform/terraform.tfvars.example` into your real `envs/dev/platform/terraform.tfvars`
+- set a real `jenkins_admin_password`
+
+Recommended dev sizing:
+
+- node pool size: `s-2vcpu-4gb`
+- Jenkins service type: `ClusterIP`
+- Jenkins access: `kubectl port-forward`
+
+Apply order remains the same:
+
+1. apply `envs/dev/infra` so the `jenkins` node pool exists
+2. refresh kubeconfig
+3. apply `envs/dev/platform`
 
 ## Notes
 
 - If a pool has only one node, workloads pinned to that pool are not highly available.
 - The old single-layer layout has been removed.
 - `terraform.tfvars`, kubeconfig files, local state, plans, and Helm caches are ignored by git.
-
