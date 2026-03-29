@@ -28,6 +28,14 @@ node_pools = [
     labels = {
       workload = "monitoring"
     }
+  },
+  {
+    name       = "jenkins"
+    size       = "s-2vcpu-4gb"
+    node_count = 1
+    labels = {
+      workload = "jenkins"
+    }
   }
 ]
 tags = ["project:platform"]

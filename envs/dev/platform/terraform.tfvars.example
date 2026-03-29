@@ -1,12 +1,15 @@
 cert_manager_chart_version  = "v1.20.0"
 ingress_nginx_chart_version = "4.12.1"
 kong_chart_version          = "2.42.0"
+rancher_chart_version       = "2.13.3"
 monitoring_chart_version    = "69.8.2"
+jenkins_chart_version       = "5.8.110"
 kong_admin_enabled          = true
 kong_db_less                = false
 kong_timeout_seconds        = 1200
 kong_admin_gui_session_conf = "{\"secret\":\"replace-me-dev-secret\",\"storage\":\"kong\",\"cookie_secure\":false}"
 grafana_admin_password      = "ChangeMeImmediately!"
+jenkins_admin_password      = "ChangeMeImmediately!"
 kong_resources = {
   requests_cpu    = "100m"
   requests_memory = "256Mi"
@@ -31,12 +34,31 @@ rancher_ingress_class_name       = "nginx"
 rancher_node_selector = {
   workload = "rancher"
 }
-grafana_service_type        = "ClusterIP"
-grafana_persistence_size    = "5Gi"
-grafana_storage_class_name  = null
-prometheus_persistence_size = "10Gi"
+grafana_service_type          = "ClusterIP"
+grafana_persistence_size      = "5Gi"
+grafana_storage_class_name    = null
+prometheus_persistence_size   = "10Gi"
 prometheus_storage_class_name = null
-prometheus_retention        = "7d"
+prometheus_retention          = "7d"
 monitoring_node_selector = {
   workload = "monitoring"
+}
+jenkins_service_type       = "ClusterIP"
+jenkins_persistence_size   = "10Gi"
+jenkins_storage_class_name = null
+jenkins_timeout_seconds    = 1200
+jenkins_node_selector = {
+  workload = "jenkins"
+}
+jenkins_prometheus_enabled         = true
+jenkins_prometheus_scrape_endpoint = "/prometheus/"
+jenkins_prometheus_scrape_interval = "60s"
+jenkins_prometheus_service_monitor_labels = {
+  release = "kube-prometheus-stack"
+}
+jenkins_resources = {
+  requests_cpu    = "500m"
+  requests_memory = "1Gi"
+  limits_cpu      = "1000m"
+  limits_memory   = "2Gi"
 }

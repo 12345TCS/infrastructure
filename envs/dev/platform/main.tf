@@ -93,5 +93,22 @@ module "monitoring" {
   depends_on = [module.cert_manager]
 }
 
+module "jenkins" {
+  source = "../../../modules/jenkins"
 
+  chart_version                     = var.jenkins_chart_version
+  admin_username                    = var.jenkins_admin_username
+  admin_password                    = var.jenkins_admin_password
+  service_type                      = var.jenkins_service_type
+  persistence_size                  = var.jenkins_persistence_size
+  storage_class_name                = var.jenkins_storage_class_name
+  node_selector                     = var.jenkins_node_selector
+  prometheus_enabled                = var.jenkins_prometheus_enabled
+  prometheus_scrape_endpoint        = var.jenkins_prometheus_scrape_endpoint
+  prometheus_scrape_interval        = var.jenkins_prometheus_scrape_interval
+  prometheus_service_monitor_labels = var.jenkins_prometheus_service_monitor_labels
+  resources                         = var.jenkins_resources
+  timeout_seconds                   = var.jenkins_timeout_seconds
 
+  depends_on = [module.monitoring]
+}
