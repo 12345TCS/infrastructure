@@ -50,6 +50,12 @@ jenkins_timeout_seconds    = 1200
 jenkins_node_selector = {
   workload = "jenkins"
 }
+jenkins_prometheus_enabled         = true
+jenkins_prometheus_scrape_endpoint = "/prometheus/"
+jenkins_prometheus_scrape_interval = "60s"
+jenkins_prometheus_service_monitor_labels = {
+  release = "kube-prometheus-stack"
+}
 jenkins_resources = {
   requests_cpu    = "500m"
   requests_memory = "1Gi"

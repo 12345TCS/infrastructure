@@ -26,10 +26,17 @@ resource "helm_release" "this" {
         }
         installLatestPlugins          = true
         installLatestSpecifiedPlugins = true
+        additionalPlugins             = ["prometheus"]
         serviceType                   = var.service_type
         nodeSelector                  = var.node_selector
         ingress = {
           enabled = false
+        }
+        prometheus = {
+          enabled                       = var.prometheus_enabled
+          scrapeEndpoint                = var.prometheus_scrape_endpoint
+          scrapeInterval                = var.prometheus_scrape_interval
+          serviceMonitorAdditionalLabels = var.prometheus_service_monitor_labels
         }
         persistence = {
           enabled          = var.persistence_enabled

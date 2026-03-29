@@ -371,3 +371,63 @@ Apply order remains the same:
 - If a pool has only one node, workloads pinned to that pool are not highly available.
 - The old single-layer layout has been removed.
 - `terraform.tfvars`, kubeconfig files, local state, plans, and Helm caches are ignored by git.
+
+## Jenkins Monitoring
+
+Jenkins monitoring is enabled through the Jenkins Helm chart by:
+
+- installing the Jenkins `prometheus` plugin
+- enabling the chart's native Prometheus endpoint and `ServiceMonitor`
+- labeling the Jenkins `ServiceMonitor` so `kube-prometheus-stack` discovers it
+
+Verify Jenkins scraping from `envs/dev/platform`:
+
+```powershell
+$env:KUBECONFIG = (Resolve-Path .\kubeconfig.yaml)
+kubectl get servicemonitor -A
+kubectl -n monitoring port-forward svc/kube-prometheus-stack-prometheus 9090:9090
+```
+
+Then in Prometheus or Grafana Explore, check:
+
+```text
+{__name__=~"jenkins_.*"}
+```
+
+A healthy Jenkins target should appear in Prometheus `/targets` with:
+
+- namespace: `jenkins`
+- job: `jenkins`
+- endpoint: `/prometheus/`
+- state: `UP`
+
+### Jenkins Grafana Dashboard
+
+A clean first Jenkins dashboard can be built with these 6 panels:
+
+1. `Jenkins Up`
+   Query: `up{job="jenkins"}`
+   Panel type: `Stat`
+
+2. `Queue Size`
+   Query: `jenkins_queue_size_value`
+   Panel type: `Stat`
+
+3. `Free Executors`
+   Query: `jenkins_executor_free_value`
+   Panel type: `Stat`
+
+4. `Online Nodes`
+   Query: `jenkins_node_online_value`
+   Panel type: `Stat`
+
+5. `Jobs Scheduled Rate`
+   Query: `rate(jenkins_job_scheduled_total[5m])`
+   Panel type: `Time series`
+
+6. `Executor Usage Trend`
+   Query A: `jenkins_executor_in_use_history`
+   Query B: `jenkins_executor_free_history`
+   Panel type: `Time series`
+
+This gives a good first view of Jenkins availability, queue pressure, node availability, and executor usage.

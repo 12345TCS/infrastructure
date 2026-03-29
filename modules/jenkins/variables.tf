@@ -53,6 +53,26 @@ variable "node_selector" {
   default = { workload = "jenkins" }
 }
 
+variable "prometheus_enabled" {
+  type    = bool
+  default = true
+}
+
+variable "prometheus_scrape_endpoint" {
+  type    = string
+  default = "/prometheus/"
+}
+
+variable "prometheus_scrape_interval" {
+  type    = string
+  default = "60s"
+}
+
+variable "prometheus_service_monitor_labels" {
+  type    = map(string)
+  default = {}
+}
+
 variable "resources" {
   type = object({
     requests_cpu    = string
