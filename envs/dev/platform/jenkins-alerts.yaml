@@ -1,0 +1,46 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: jenkins-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: jenkins.rules
+      rules:
+        - alert: JenkinsDown
+          expr: up{job="jenkins"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: Jenkins is down
+            description: Prometheus cannot scrape the Jenkins target for 5 minutes.
+
+        - alert: JenkinsQueueTooLarge
+          expr: jenkins_queue_size_value > 10
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Jenkins queue is large
+            description: Jenkins queue size has been above 10 for 10 minutes.
+
+        - alert: JenkinsNoFreeExecutors
+          expr: jenkins_executor_free_value == 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Jenkins has no free executors
+            description: Jenkins has had no free executors for 10 minutes.
+
+        - alert: JenkinsNoOnlineNodes
+          expr: jenkins_node_online_value == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: Jenkins has no online nodes
+            description: Jenkins reports no online nodes for 5 minutes.
