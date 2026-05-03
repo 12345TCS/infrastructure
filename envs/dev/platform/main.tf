@@ -41,24 +41,26 @@ module "kong_postgres" {
 module "kong" {
   source = "../../../modules/kong"
 
-  chart_version          = var.kong_chart_version
-  replica_count          = var.kong_replica_count
-  admin_enabled          = var.kong_admin_enabled
-  admin_service_type     = var.kong_admin_service_type
-  admin_http_enabled     = var.kong_admin_http_enabled
-  admin_tls_enabled      = var.kong_admin_tls_enabled
-  manager_enabled        = var.kong_manager_enabled
-  manager_service_type   = var.kong_manager_service_type
-  manager_http_enabled   = var.kong_manager_http_enabled
-  manager_tls_enabled    = var.kong_manager_tls_enabled
-  db_less                = var.kong_db_less
-  database               = local.kong_database
-  resources              = var.kong_resources
-  timeout_seconds        = var.kong_timeout_seconds
-  admin_gui_url          = var.kong_admin_gui_url
-  admin_gui_api_url      = var.kong_admin_gui_api_url
-  admin_gui_session_conf = var.kong_admin_gui_session_conf
-  node_selector          = var.kong_node_selector
+  chart_version                  = var.kong_chart_version
+  replica_count                  = var.kong_replica_count
+  admin_enabled                  = var.kong_admin_enabled
+  admin_service_type             = var.kong_admin_service_type
+  admin_http_enabled             = var.kong_admin_http_enabled
+  admin_tls_enabled              = var.kong_admin_tls_enabled
+  manager_enabled                = var.kong_manager_enabled
+  manager_service_type           = var.kong_manager_service_type
+  manager_http_enabled           = var.kong_manager_http_enabled
+  manager_tls_enabled            = var.kong_manager_tls_enabled
+  db_less                        = var.kong_db_less
+  database                       = local.kong_database
+  resources                      = var.kong_resources
+  timeout_seconds                = var.kong_timeout_seconds
+  admin_gui_url                  = var.kong_admin_gui_url
+  admin_gui_api_url              = var.kong_admin_gui_api_url
+  admin_gui_session_conf         = var.kong_admin_gui_session_conf
+  metrics_enabled                = var.kong_metrics_enabled
+  metrics_service_monitor_labels = var.kong_metrics_service_monitor_labels
+  node_selector                  = var.kong_node_selector
 
   depends_on = [module.cert_manager, module.kong_postgres]
 }
