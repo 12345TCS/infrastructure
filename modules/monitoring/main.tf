@@ -53,6 +53,17 @@ resource "helm_release" "this" {
       alertmanager = {
         alertmanagerSpec = {
           nodeSelector = var.node_selector
+          alertmanagerConfigMatcherStrategy = {
+            type = "None"
+          }
+          alertmanagerConfigSelector = {
+            matchLabels = {
+              alertmanagerConfig = "platform-alerts"
+            }
+          }
+          alertmanagerConfigNamespaceSelector = {
+            matchNames = ["monitoring"]
+          }
         }
       }
       kubeStateMetrics = {

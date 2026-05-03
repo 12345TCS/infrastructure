@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-kong-metrics
+  namespace: kong
+  labels:
+    app.kubernetes.io/instance: kong
+    app.kubernetes.io/name: kong
+    release: kong
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/component: app
+    app.kubernetes.io/instance: kong
+    app.kubernetes.io/name: kong
+  ports:
+    - name: status
+      port: 8100
+      protocol: TCP
+      targetPort: 8100

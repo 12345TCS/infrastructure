@@ -1,0 +1,38 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: platform-alerts
+  namespace: monitoring
+  labels:
+    alertmanagerConfig: platform-alerts
+spec:
+  route:
+    receiver: slack-infra-alerts
+    groupBy:
+      - alertname
+      - namespace
+      - severity
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 12h
+    routes:
+      - receiver: slack-infra-alerts
+        matchers:
+          - name: alertname
+            value: Jenkins.*
+            matchType: =~
+  receivers:
+    - name: slack-infra-alerts
+      slackConfigs:
+        - sendResolved: true
+          apiURL:
+            name: alertmanager-slack-webhook
+            key: url
+          channel: "#infra-alerts"
+          username: "Alertmanager"
+          title: '{{ .CommonLabels.alertname }}'
+          text: |-
+            *Status:* {{ .Status }}
+            *Severity:* {{ .CommonLabels.severity }}
+            *Summary:* {{ .CommonAnnotations.summary }}
+            *Description:* {{ .CommonAnnotations.description }}

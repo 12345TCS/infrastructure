@@ -229,18 +229,21 @@ kubectl get ingress -n cattle-system
 ```
 ## Kong Metrics
 
-Kong base metrics are enabled by Terraform through the Kong Helm chart:
+Kong metrics now rely on three pieces:
 
 - Kong runtime loads the `prometheus` plugin
-- Prometheus Operator discovers Kong through the chart-created `ServiceMonitor`
+- a dedicated metrics service exposes Kong status/metrics on port `8100`
+- a checked-in `ServiceMonitor` tells Prometheus to scrape that metrics service
 
-The richer global Prometheus plugin configuration is applied from a checked-in manifest instead of Terraform because the Terraform Kubernetes provider timed out on the `KongClusterPlugin` CRD OpenAPI lookup in this environment.
+These are applied from checked-in manifests instead of relying on the Helm chart to create them, because the richer Kong monitoring path was not reproducibly recreated from the Terraform/Helm flow after a clean rebuild in this environment.
 
-Apply the richer Kong metrics plugin from `envs/dev/platform`:
+Apply the Kong monitoring manifests from `envs/dev/platform`:
 
 ```powershell
 $env:KUBECONFIG = (Resolve-Path .\kubeconfig.yaml)
 kubectl apply -f .\kong-prometheus-plugin.yaml
+kubectl apply -f .\kong-metrics-service.yaml
+kubectl apply -f .\kong-servicemonitor.yaml
 ```
 
 Verify the plugin is active in Kong runtime:
@@ -254,6 +257,7 @@ Verify Prometheus is scraping Kong:
 
 ```powershell
 kubectl get servicemonitor -A
+kubectl get svc -n kong
 kubectl -n monitoring port-forward svc/kube-prometheus-stack-prometheus 9090:9090
 ```
 
@@ -305,6 +309,8 @@ If you also enabled the richer Kong Prometheus plugin for testing and do not wan
 
 ```powershell
 kubectl delete -f .\kong-prometheus-plugin.yaml
+kubectl delete -f .\kong-servicemonitor.yaml
+kubectl delete -f .\kong-metrics-service.yaml
 ```
 ## Access Pattern
 
@@ -427,3 +433,87 @@ A clean first Jenkins dashboard can be built with these 6 panels:
    Panel type: `Time series`
 
 This gives a good first view of Jenkins availability, queue pressure, node availability, and executor usage.
+
+## Jenkins Alert Rules
+
+The first Jenkins health alerts are stored in:
+
+- `envs/dev/platform/jenkins-alerts.yaml`
+
+This manifest creates a `PrometheusRule` for:
+
+- `JenkinsDown`
+- `JenkinsQueueTooLarge`
+- `JenkinsNoFreeExecutors`
+- `JenkinsNoOnlineNodes`
+
+Apply the rules from `envs/dev/platform`:
+
+```powershell
+$env:KUBECONFIG = (Resolve-Path .\kubeconfig.yaml)
+kubectl apply -f .\jenkins-alerts.yaml
+```
+
+Verify the rule resource:
+
+```powershell
+kubectl get prometheusrule -n monitoring
+```
+
+Then in Prometheus, check the loaded rules at `/rules` after port-forwarding Prometheus.
+
+## Alertmanager Slack Routing
+
+Slack delivery for Jenkins alerts is configured through an `AlertmanagerConfig` and a Kubernetes secret in the `monitoring` namespace.
+
+Files involved:
+
+- `envs/dev/platform/alertmanager-slack-config.yaml`
+- `modules/monitoring/main.tf`
+
+The monitoring module configures Alertmanager to:
+
+- select `AlertmanagerConfig` resources labeled `alertmanagerConfig=platform-alerts`
+- allow `AlertmanagerConfig` routes to match alerts outside the `monitoring` namespace by setting `alertmanagerConfigMatcherStrategy.type = "None"`
+
+Create the Slack webhook secret from `envs/dev/platform`:
+
+```powershell
+$env:KUBECONFIG = (Resolve-Path .\kubeconfig.yaml)
+kubectl -n monitoring create secret generic alertmanager-slack-webhook `
+  --from-literal=url="https://hooks.slack.com/services/XXX/YYY/ZZZ"
+```
+
+Apply the Alertmanager Slack config:
+
+```powershell
+kubectl apply -f .\alertmanager-slack-config.yaml
+```
+
+If the monitoring stack was changed, apply Terraform and restart Alertmanager:
+
+```powershell
+terraform plan -var-file="terraform.tfvars" -out="platform.tfplan"
+terraform apply "platform.tfplan"
+kubectl rollout restart statefulset alertmanager-kube-prometheus-stack-alertmanager -n monitoring
+```
+
+Verify in Alertmanager:
+
+- `http://127.0.0.1:9093`
+- `Status` / `Configuration`
+
+The active Slack route should include:
+
+- receiver: `monitoring/platform-alerts/slack-infra-alerts`
+- matcher: `alertname=~"Jenkins.*"`
+
+With the current dev setup, Slack notifications were verified for:
+
+- `JenkinsNoOnlineNodes`
+- `JenkinsNoFreeExecutors`
+
+Note:
+
+- the current Jenkins alert thresholds are still dev-draft values and should be tuned later
+- default platform alerts such as `Watchdog` may also reach the Slack channel until routing is refined further
