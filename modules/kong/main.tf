@@ -13,7 +13,7 @@ locals {
   kong_env = merge(
     {
       database = var.db_less ? "off" : "postgres"
-      plugins  = var.metrics_enabled ? "bundled,prometheus" : "bundled"
+      plugins  = "bundled,prometheus"
     },
     var.manager_enabled && var.admin_gui_url != null ? {
       admin_gui_url = var.admin_gui_url
@@ -87,8 +87,10 @@ resource "helm_release" "this" {
         }
       }
       serviceMonitor = {
-        enabled = var.metrics_enabled
-        labels  = var.metrics_service_monitor_labels
+        enabled = true
+        labels = {
+          release = "kube-prometheus-stack"
+        }
       }
       resources = {
         requests = {

@@ -95,6 +95,16 @@ module "monitoring" {
   depends_on = [module.cert_manager]
 }
 
+module "jenkins" {
+  source = "../../../modules/jenkins"
 
-
-
+  chart_version      = var.jenkins_chart_version
+  admin_username     = var.jenkins_admin_username
+  admin_password     = var.jenkins_admin_password
+  service_type       = var.jenkins_service_type
+  persistence_size   = var.jenkins_persistence_size
+  storage_class_name = var.jenkins_storage_class_name
+  node_selector      = var.jenkins_node_selector
+  resources          = var.jenkins_resources
+  timeout_seconds    = var.jenkins_timeout_seconds
+}

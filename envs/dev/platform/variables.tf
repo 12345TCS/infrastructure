@@ -20,6 +20,10 @@ variable "monitoring_chart_version" {
   type = string
 }
 
+variable "jenkins_chart_version" {
+  type = string
+}
+
 variable "kong_replica_count" {
   type    = number
   default = 1
@@ -222,11 +226,52 @@ variable "monitoring_node_selector" {
   default = { workload = "monitoring" }
 }
 
-
-
 variable "cert_manager_node_selector" {
   type    = map(string)
   default = { workload = "rancher" }
 }
 
+variable "jenkins_admin_username" {
+  type    = string
+  default = "admin"
+}
 
+variable "jenkins_admin_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "jenkins_service_type" {
+  type    = string
+  default = "ClusterIP"
+}
+
+variable "jenkins_persistence_size" {
+  type    = string
+  default = "10Gi"
+}
+
+variable "jenkins_storage_class_name" {
+  type     = string
+  default  = null
+  nullable = true
+}
+
+variable "jenkins_timeout_seconds" {
+  type    = number
+  default = 1200
+}
+
+variable "jenkins_node_selector" {
+  type    = map(string)
+  default = { workload = "jenkins" }
+}
+
+variable "jenkins_resources" {
+  type = object({
+    requests_cpu    = string
+    requests_memory = string
+    limits_cpu      = string
+    limits_memory   = string
+  })
+}
