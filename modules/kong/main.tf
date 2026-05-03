@@ -3,6 +3,9 @@ terraform {
     helm = {
       source = "hashicorp/helm"
     }
+    kubernetes = {
+      source = "hashicorp/kubernetes"
+    }
   }
 }
 
@@ -101,4 +104,22 @@ resource "helm_release" "this" {
       }
     })
   ]
+}
+
+resource "kubernetes_manifest" "prometheus_plugin" {
+  count = var.metrics_enabled ? 1 : 0
+
+  manifest = {
+    apiVersion = "configuration.konghq.com/v1"
+    kind       = "KongClusterPlugin"
+    metadata = {
+      name = "prometheus"
+      labels = {
+        global = "true"
+      }
+    }
+    plugin = "prometheus"
+  }
+
+  depends_on = [helm_release.this]
 }

@@ -117,3 +117,15 @@ variable "node_selector" {
   type    = map(string)
   default = {}
 }
+
+variable "metrics_enabled" {
+  type    = bool
+  default = true
+}
+
+variable "metrics_service_monitor_labels" {
+  type = map(string)
+  default = {
+    release = "kube-prometheus-stack"
+  }
+}

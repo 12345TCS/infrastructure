@@ -227,7 +227,6 @@ kubectl get svc -n monitoring
 kubectl get svc -n jenkins
 kubectl get ingress -n cattle-system
 ```
-
 ## Kong Metrics
 
 Kong base metrics are enabled by Terraform through the Kong Helm chart:
@@ -307,7 +306,6 @@ If you also enabled the richer Kong Prometheus plugin for testing and do not wan
 ```powershell
 kubectl delete -f .\kong-prometheus-plugin.yaml
 ```
-
 ## Access Pattern
 
 - Rancher is an infra/admin service and is exposed through `ingress-nginx`.
@@ -371,8 +369,6 @@ Apply order remains the same:
 - If a pool has only one node, workloads pinned to that pool are not highly available.
 - The old single-layer layout has been removed.
 - `terraform.tfvars`, kubeconfig files, local state, plans, and Helm caches are ignored by git.
-
-## Jenkins Monitoring
 
 Jenkins monitoring is enabled through the Jenkins Helm chart by:
 
