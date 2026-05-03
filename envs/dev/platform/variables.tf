@@ -267,6 +267,26 @@ variable "jenkins_node_selector" {
   default = { workload = "jenkins" }
 }
 
+variable "jenkins_prometheus_enabled" {
+  type    = bool
+  default = true
+}
+
+variable "jenkins_prometheus_scrape_endpoint" {
+  type    = string
+  default = "/prometheus/"
+}
+
+variable "jenkins_prometheus_scrape_interval" {
+  type    = string
+  default = "60s"
+}
+
+variable "jenkins_prometheus_service_monitor_labels" {
+  type    = map(string)
+  default = { release = "kube-prometheus-stack" }
+}
+
 variable "jenkins_resources" {
   type = object({
     requests_cpu    = string
